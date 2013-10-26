@@ -1,0 +1,11 @@
+NEEDS TO
+
+1) Ask for the DNS name of the URTBOD server to report to
+2) Ask for the certs for the server
+3) Ask what the name and Shark unit number is of this unit
+3) Modify scripts/root/.ssh/config with the name of the server
+4) Install the certs under scripts/etc/ssl
+5) Update scripts/etc/init.d/urtbod-client variables:
+URTBODSERVER=__URTBODSERVER__
+UNIT=__SHARKNUMBER__
+

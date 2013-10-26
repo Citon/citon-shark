@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# Update IP conversation stats under /cap/stats
+
+/usr/local/bin/shark-statsconv ip >> /var/log/shark-statsconv.log
+

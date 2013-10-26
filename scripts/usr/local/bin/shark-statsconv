@@ -1,0 +1,70 @@
+#!/bin/sh
+#
+# Copyright(c) 2013, Citon Computer Corporation
+# All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+# 3. Neither the name of CITON COMPUTER CORPORATION nor the names of
+#    its contributors may be used to endorse or promote products
+#    derived from this software without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+# IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+# NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+# THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+# shark-statsconv - Process capture files to extract conversation stats
+
+# Given a directory $SOURCECAPS, check if $DESTSTATS/FILENAME-SUFFIX.csv exists
+# create it if not.  Takes one argument - The type of converstation to produce
+# stats on.
+
+TYPE=$1
+
+if [ X${TYPE} = "X" ]; then
+        echo "You must specify a type.  Valid types include: ip, ipv6, tcp, udp "
+        exit 1
+fi
+
+# Source capture directory
+SOURCECAPS=/cap/dumpy
+
+# Destination to hold stat files
+DESTSTATS=/cap/stats
+
+# Set suffix to include the protocol we are pulling stats for
+SUFFIX=conv-$1
+
+# The minimum age of a source file (since last modify) before being checked.
+# This should be slightly larger than your per-capture file rotation time
+# to avoid processing half complete files
+MINAGE=1000
+
+# The base of the tshark command to run.  Note that it will be run under nice
+# to limit interactive impact
+TSHARKCMD="/usr/local/bin/tshark -q -z conv,${TYPE} -r"
+
+for i in `ls ${SOURCECAPS}/`; do
+        if [ `stat --printf=%Y ${SOURCECAPS}/${i}` -lt $(( `date +%s` - ${MINAGE})) ]; then
+                DEST="${DESTSTATS}/${i}-${SUFFIX}.csv"
+                if [ ! -f ${DEST} ]; then
+                        echo -n "Processing ${i} to ${DEST}..."
+                        /usr/bin/nice ${TSHARKCMD} ${SOURCECAPS}/${i} > ${DEST}
+                        echo "Done."
+                fi
+        fi
+done
+

@@ -1,0 +1,80 @@
+#!/bin/sh
+
+# Copyright(c) 2013, Citon Computer Corporation
+# All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+# 3. Neither the name of CITON COMPUTER CORPORATION nor the names of
+#    its contributors may be used to endorse or promote products
+#    derived from this software without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+# IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+# NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+# THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+# Continuous capture to ring buffer of multiple tcpdump files
+
+# Set to your capture interface
+CAPIF=eth1
+
+# Set your capture destination path - MAKE SURE IT HAS SPACE!
+CAPDEST=/cap/dumpy
+
+# Set this to filter out traffic you don't want to record at all
+DUMPCAPFILT=''
+
+# Set the maximum per-dump file size in KB (2000000 is about 2GB)
+DUMPCAPMAXSIZE=2000000
+
+# Set the time to capture per-file in seconds
+DUMPCAPROTTIME=1800
+
+# Set the number of capture files to maintain 
+DUMPCAPFILES=72
+
+
+### You should not need to hack anything after this, but you are welcome
+### to ;)
+
+case "$1" in
+	start)
+		# Create the capture directory if it is missing
+		if [ ! -d ${CAPDEST} ]; then
+			mkdir -p ${CAPDEST}
+		fi
+		
+		# Disable all TCP/IP offload features on the NIC
+		echo -n "Dumpy: Killing offload on ${CAPIF}"
+		/usr/sbin/ethtool -A ${CAPIF} autoneg off rx off > /var/log/dumpy.log 2>&1
+		
+		# Configure monitor interface with no IP
+		/sbin/ifconfig ${CAPIF} up 0.0.0.0
+		
+		# Run a continous capture - Adjust params as needed
+		echo ", dumping from ${CAPIF} to ${CAPDEST}/${HOSTNAME}-${CAPIF}"
+		/usr/local/bin/dumpcap -q -b duration:${DUMPCAPROTTIME} -b files:${DUMPCAPFILES} -s 9600 -i ${CAPIF} -w ${CAPDEST}/${HOSTNAME}-${CAPIF} -f "${DUMPCAPFILT}" >> /var/log/dumpy.log 2>&1 &
+		
+		exit 0
+	;;
+
+	stop)
+		pkill dumpcap
+	;;
+esac
+
+exit 0
+

@@ -1,0 +1,72 @@
+# !/bin/sh
+
+# Copyright(c) 2013, Citon Computer Corporation
+# All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+# 3. Neither the name of CITON COMPUTER CORPORATION nor the names of
+#    its contributors may be used to endorse or promote products
+#    derived from this software without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+# IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+# NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+# THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+# Connect to the remote URTBOD server using SSH over SSL - Requires
+# certificate for server, private key and cert for this client, and
+# a modified /root/.ssh/config file to call socat when connecting
+# to your server
+
+# Set the FQDN of the server to connect to - Set in /etc/hosts if needed
+URTBODSERVER=__URTBODSERVER__
+
+# Set the three digit unit number for this system - IT MUST BE UNIQUE!
+UNIT=__SHARKNUMBER__
+
+# Set a unique port to forward from the remote server.  THIS MUST
+# BE DIFFERENT FOR EACH CLIENT!
+REMOTEPORT=22${UNIT}
+
+# The AUTOSSH monitor port and response ports should also be unique per-client
+AUTOSSH_MONPORTS=42${UNIT}:52${UNIT}
+
+# Set the monitor interfval for autossh
+AUTOSSH_POLL=120
+
+# Disable the GATETIME feature
+AUTOSSH_GATETIME=60
+
+## You should not have to modify anything beyond this point
+
+
+case "$1" in
+	start)
+		# Start an autossh session (will restart SSH as needed)
+		echo "Initiating autossh link to ${URTBODSERVER} - Remote forward port ${REMOTEPORT}"
+		touch /var/run/urtbod-client
+		(while [ -e /var/run/urtbod-client ]; do /usr/bin/autossh ${HOSTNAME}@${URTBODSERVER} -R${REMOTEPORT}:127.0.0.1:22 -N; sleep 10; done) &
+		exit 0
+	;;
+
+	stop)
+		rm /var/run/urtbod-client
+		pkill autossh
+	;;
+esac
+
+exit 0
+
