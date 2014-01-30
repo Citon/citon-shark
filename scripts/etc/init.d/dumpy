@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Copyright(c) 2013, Citon Computer Corporation
+# Copyright(c) 2014, Citon Computer Corporation
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without
@@ -46,9 +46,25 @@ DUMPCAPROTTIME=1800
 # Set the number of capture files to maintain 
 DUMPCAPFILES=72
 
+# Set the log file name
+LOGFILE=/var/log/dumpy.log
+
+# Manually set the paths to executables
+DUMPCAP=/usr/local/bin/dumpcap
+#DUMPCAP=/usr/bin/dumpcap
+
+IFCONFIG=/sbin/ifconfig
+
+ETHTOOL=/usr/sbin/ethtool
+
 
 ### You should not need to hack anything after this, but you are welcome
 ### to ;)
+
+# Set the hostname
+if [ "X${HOSTNAME}" = "X" ]; then
+        HOSTNAME=`hostname`
+fi
 
 case "$1" in
 	start)
@@ -59,14 +75,14 @@ case "$1" in
 		
 		# Disable all TCP/IP offload features on the NIC
 		echo -n "Dumpy: Killing offload on ${CAPIF}"
-		/usr/sbin/ethtool -A ${CAPIF} autoneg off rx off > /var/log/dumpy.log 2>&1
+		${ETHTOOL} -A ${CAPIF} autoneg off rx off > ${LOGFILE} 2>&1
 		
 		# Configure monitor interface with no IP
-		/sbin/ifconfig ${CAPIF} up 0.0.0.0
+		${IFCONFIG} ${CAPIF} up 0.0.0.0
 		
 		# Run a continous capture - Adjust params as needed
 		echo ", dumping from ${CAPIF} to ${CAPDEST}/${HOSTNAME}-${CAPIF}"
-		/usr/local/bin/dumpcap -q -b duration:${DUMPCAPROTTIME} -b files:${DUMPCAPFILES} -s 9600 -i ${CAPIF} -w ${CAPDEST}/${HOSTNAME}-${CAPIF} -f "${DUMPCAPFILT}" >> /var/log/dumpy.log 2>&1 &
+		${DUMPCAP} -q -b duration:${DUMPCAPROTTIME} -b files:${DUMPCAPFILES} -s 9600 -i ${CAPIF} -w ${CAPDEST}/${HOSTNAME}-${CAPIF} -f "${DUMPCAPFILT}" >> ${LOGFILE} 2>&1 &
 		
 		exit 0
 	;;
