@@ -1,5 +1,5 @@
 #!/bin/sh
-
+#
 # Copyright(c) 2014, Citon Computer Corporation
 # All rights reserved.
 # 
@@ -25,52 +25,42 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 # THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+##
 
-# Connect to the remote URTBOD server using SSH over SSL - Requires
-# certificate for server, private key and cert for this client, and
-# a modified /root/.ssh/config file to call socat when connecting
-# to your server
+# shark-newuser - Create a new URTBOD tunnel server user for a Shark.
+#                 This runs on the tunnel server side.
 
-# Set the FQDN of the server to connect to - Set in /etc/hosts if needed
-URTBODSERVER=__URTBODSERVER__
 
-# Set the three digit unit number for this system - IT MUST BE UNIQUE!
-UNIT=__SHARKNUMBER__
+NEWHOSTNAME=${1}
 
-# Set a unique port to forward from the remote server.  THIS MUST
-# BE DIFFERENT FOR EACH CLIENT!
-REMOTEPORT=22${UNIT}
-
-# The AUTOSSH monitor port and response ports should also be unique per-client
-AUTOSSH_MONPORTS=42${UNIT}:52${UNIT}
-
-# Set the monitor interfval for autossh
-AUTOSSH_POLL=120
-
-# Disable the GATETIME feature
-AUTOSSH_GATETIME=60
-
-## You should not have to modify anything beyond this point
-
-# Set the hostname
-if [ "X${HOSTNAME}" = "X" ]; then
-       HOSTNAME=`hostname`
+if [ X${NEWHOSTNAME} = X ]; then
+    echo "You must specify a hostname for the new remote client"
+    exit 1
 fi
 
-case "$1" in
-	start)
-		# Start an autossh session (will restart SSH as needed)
-		echo "Initiating autossh link to ${URTBODSERVER} - Remote forward port ${REMOTEPORT}"
-		touch /var/run/urtbod-client
-		(while [ -e /var/run/urtbod-client ]; do /usr/bin/autossh ${HOSTNAME}@${URTBODSERVER} -R${REMOTEPORT}:127.0.0.1:22 -N; sleep 10; done) &
-		exit 0
-	;;
+echo "Please paste the new remote client's SSH public key below and hit ENTER"
+while read -r PUBKEY; do
+    if [ "X${PUBKEY}" != "X" ]; then
+	if echo ${PUBKEY} | egrep '^ssh-(rsa|dss) [a-zA-Z0-9\+\/\=]+ .+\@.+' >> /dev/null; then
+	    echo "Public key accepted"
+	    break
+	else
+	    echo "Invalid public key format - Please re-enter"
+	fi
+    else
+     	echo "Invalid input - Please enter a valid SSH public key"
+    fi
+done
 
-	stop)
-		rm /var/run/urtbod-client
-		pkill autossh
-	;;
-esac
 
-exit 0
+echo "Adding new account fro ${NEWHOSTNAME}"
+adduser --gecos "${NEWHOSTNAME} Shark,,," --disabled-password ${NEWHOSTNAME}
 
+echo "Adding public key for ${NEWHOSTNAME} to ~${NEWHOSTNAME}/.ssh/authorized_keys"
+mkdir -p /home/${NEWHOSTNAME}/.ssh
+echo ${PUBKEY} >> /home/${NEWHOSTNAME}/.ssh/authorized_keys
+chown -R ${NEWHOSTNAME}:${NEWHOSTNAME} /home/${NEWHOSTNAME}/.ssh
+chmod 700 /home/${NEWHOSTNAME}/.ssh/authorized_keys
+
+echo "New account setup complete"
