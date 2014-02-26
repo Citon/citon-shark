@@ -47,11 +47,11 @@ DUMPCAPROTTIME=1800
 DUMPCAPFILES=72
 
 # Set the log file name
-LOGFILE=/var/log/dumpy.log
+LOGFILE=/var/log/shark-dumpy.log
 
 # Manually set the paths to executables
-DUMPCAP=/usr/local/bin/dumpcap
-#DUMPCAP=/usr/bin/dumpcap
+#DUMPCAP=/usr/local/bin/dumpcap
+DUMPCAP=/usr/bin/dumpcap
 
 IFCONFIG=/sbin/ifconfig
 

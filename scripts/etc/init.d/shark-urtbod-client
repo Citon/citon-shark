@@ -61,16 +61,15 @@ case "$1" in
 	start)
 		# Start an autossh session (will restart SSH as needed)
 		echo "Initiating autossh link to ${URTBODSERVER} - Remote forward port ${REMOTEPORT}"
-		touch /var/run/urtbod-client
-		(while [ -e /var/run/urtbod-client ]; do /usr/bin/autossh ${HOSTNAME}@${URTBODSERVER} -R${REMOTEPORT}:127.0.0.1:22 -N; sleep 10; done) &
+		touch /var/run/shark-urtbod-client
+		(while [ -e /var/run/shark-urtbod-client ]; do /usr/bin/autossh ${HOSTNAME}@${URTBODSERVER} -R${REMOTEPORT}:127.0.0.1:22 -N; sleep 10; done) &
 		exit 0
 	;;
 
 	stop)
-		rm /var/run/urtbod-client
+		rm /var/run/shark-urtbod-client
 		pkill autossh
 	;;
 esac
 
 exit 0
-
