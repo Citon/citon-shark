@@ -31,7 +31,11 @@
 # shark-clean - Cleanup everything under /cap/dumpy and /cap/stats to prepare
 #              for a new deployment
 
-echo "$0 will delete all files under /cap/dumpy/ and /cap/stats"
+CAPDIR="/cap/dumpy"
+STATSDIR="/cap/stats"
+STATSLOG="/var/log/shark-statsconv.log"
+
+echo "$0 will delete all capture and stats files under ${CAPDIR} and ${STATSDIR}"
 
 asksure() {
 echo -n "Are you sure (Y/N)? "
@@ -49,10 +53,10 @@ return $retval
 }
 
 if asksure; then
-  echo -n "Cleaning /cap/dumpy, /cap/stats, and logs..."
-  rm -f /cap/dumpy/*
-  rm -f /cap/stats/*
-  echo "" > /var/log/shark-statsconv.log
+  echo -n "Cleaning ${CAPDIR} and ${STATSDIR}"
+  rm -f ${CAPDIR}/*-eth*
+  rm -f ${STATSDIR}/*-eth*
+  echo "" > ${STATSLOG}
   echo "Done."
 else
   echo "Well, nevermind then."

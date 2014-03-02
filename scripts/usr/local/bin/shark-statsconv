@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright(c) 2013, Citon Computer Corporation
+# Copyright(c) 2014, Citon Computer Corporation
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without
@@ -53,16 +53,24 @@ SUFFIX=conv-$1
 # to avoid processing half complete files
 MINAGE=1000
 
+# Find tshark
+TSHARK=`which tshark`
+
+if [ "X${TSHARK}" = "X"]; then
+    echo "FATAL: tshark not found in path"
+    exit 1
+fi
+
 # The base of the tshark command to run.  Note that it will be run under nice
 # to limit interactive impact
-TSHARKCMD="/usr/local/bin/tshark -q -z conv,${TYPE} -r"
+TSHARKCMD="${TSHARK} -q -z conv,${TYPE} -r"
 
 for i in `ls ${SOURCECAPS}/`; do
         if [ `stat --printf=%Y ${SOURCECAPS}/${i}` -lt $(( `date +%s` - ${MINAGE})) ]; then
                 DEST="${DESTSTATS}/${i}-${SUFFIX}.csv"
                 if [ ! -f ${DEST} ]; then
                         echo -n "Processing ${i} to ${DEST}..."
-                        /usr/bin/nice ${TSHARKCMD} ${SOURCECAPS}/${i} > ${DEST}
+                        nice ${TSHARKCMD} ${SOURCECAPS}/${i} > ${DEST}
                         echo "Done."
                 fi
         fi

@@ -31,11 +31,17 @@
 # shark-newuser - Create a new URTBOD tunnel server user for a Shark.
 #                 This runs on the tunnel server side.
 
+EID=`id -u`
+
+if [ "X${EID}" != "X0" ]; then
+    echo "ERROR: Please rerun as root or with sudo - Elevated privilges required"
+    exit 1
+fi
 
 NEWHOSTNAME=${1}
 
 if [ X${NEWHOSTNAME} = X ]; then
-    echo "You must specify a hostname for the new remote client"
+    echo "ERROR: You must specify a hostname for the new remote client"
     exit 1
 fi
 
@@ -46,10 +52,10 @@ while read -r PUBKEY; do
 	    echo "Public key accepted"
 	    break
 	else
-	    echo "Invalid public key format - Please re-enter"
+	    echo "WARNING: Invalid public key format - Please re-enter"
 	fi
     else
-     	echo "Invalid input - Please enter a valid SSH public key"
+     	echo "WARNING: Invalid input - Please enter a valid SSH public key"
     fi
 done
 
