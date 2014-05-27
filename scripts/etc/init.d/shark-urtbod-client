@@ -1,4 +1,12 @@
 #!/bin/sh
+### BEGIN INIT INFO
+# Provides:          shark-urtbod-client
+# Required-Start:    $local_fs $network
+# Required-Stop:     $local_fs $network
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Shark URTBOD Tunnel
+### END INIT INFO
 
 # Copyright(c) 2014, Citon Computer Corporation
 # All rights reserved.
@@ -31,11 +39,31 @@
 # a modified /root/.ssh/config file to call socat when connecting
 # to your server
 
-# Set the FQDN of the server to connect to - Set in /etc/hosts if needed
-URTBODSERVER=__URTBODSERVER__
+# Set the FQDN of the server to connect to using the shark-urtbodserver config
+# file
+if [ -f /etc/shark-urtbodserver ]; then
+    URTBODSERVER=`cat /etc/shark-urtbodserver`
+    if [ "X${URTBODSERVER}" = "Xsetme" ]; then
+	echo "$0 FATAL: You must set the fully qualified name or IP for your URTBOD tunnel server in /etc/shark-urtbodserver."
+	exit 1
+    fi
+else
+    echo "$0 FATAL: The URTBOD config file /etc/shark-urtbodserver is missing.  You must set the fully qualified name or IP for your URTBOD tunnel server in /etc/shark-urtbodserver."
+    exit 1
+fi
 
 # Set the three digit unit number for this system - IT MUST BE UNIQUE!
-UNIT=__SHARKNUMBER__
+if [ -f /etc/shark-unit ]; then
+    UNIT=`cat /etc/shark-unit`
+    if [ "X${UNIT}" = "Xxxx" ]; then
+	echo "$0 FATAL: You must set a 3 digit Shark unit number in /etc/shark-unit and it must be unique to the URTBOD server you are connecting to"
+	exit 1
+    fi
+else
+    echo "$0 FATAL: The URTBOD config file /etc/shark-unit is missing. You must set a 3 digit Shark unit number in /etc/shark-unit and it must be unique to the URTBOD server you are connecting to." 
+    exit 1
+fi
+
 
 # Set a unique port to forward from the remote server.  THIS MUST
 # BE DIFFERENT FOR EACH CLIENT!
@@ -69,6 +97,12 @@ case "$1" in
 	stop)
 		rm /var/run/shark-urtbod-client
 		pkill autossh
+	;;
+
+        status)
+	        if [ -e /var/run/shark-urtbod-client ]; then
+		    echo "shark-urtbod-client pid detected - Enabled"
+		fi
 	;;
 esac
 
